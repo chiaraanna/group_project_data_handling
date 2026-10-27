@@ -1,0 +1,265 @@
+---
+title: "Data Handling: Group Project 2026"
+subtitle: "Women at work"
+author:
+  - name: Author1, Name
+  - name: Author2, Name
+  - name: Author3, Name
+  - name: Author4, Name
+  - name: Author5, Name
+date: today
+format:
+  html:
+    embed-resources: true
+    toc: true
+highlight-style: dracula
+---
+
+```{r setup, echo=FALSE, eval=TRUE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = TRUE, eval = TRUE)
+```
+
+# How to use this template
+
+Write your answers below each question heading. Feel free to use standard markdown syntax for your text. For instance, *this*, or **this**, or maybe you want to write code inline with `2+2`. For bullet points and lists, use
+
+  - this
+  - is
+  - a bullet point (make sure you have one full empty line before the list starts)
+
+Your code should be written in **code chunks**, with clear comments explaining each step. When you run the entire document, all objects created in the chunks are saved in your R environment. If you want to run the code line by line instead, use the Run button or Ctrl + Enter (Cmd + Enter on Mac).
+
+```{r}
+# This is a vector. If I print it, it appears in the rendered document.
+vec <- c(2, 2)
+print(vec)
+```
+
+```{r, eval=FALSE}
+# eval = FALSE: code chunk is shown, but not executed (no output is printed)
+vec <- c(2, 2)
+vec
+```
+
+```{r, echo=FALSE}
+# echo = FALSE: code is executed, but the code itself is hidden (only output is printed)
+vec <- c(2, 2)
+vec
+```
+
+```{r, echo=TRUE, results='hide'}
+# results = 'hide': code is shown, executed, but output is hidden
+vec <- c(2, 2)
+vec
+```
+
+Delete this section before you submit.
+
+
+# R Setup
+
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+
+# Part 1: Importing data with R packages
+
+## Female labour force participation (ILO)
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## GDP per capita (World Bank)
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## Check and store the data
+
+**1.**
+
+**2.**
+
+**3.**
+
+```{r}
+
+```
+
+
+# Part 2: Programming your own API functions
+
+## Female labour force participation (ILO)
+
+### Retrieve data using your own API wrapper
+
+```{r}
+
+```
+
+### Test your API
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## Bonus: GDP per capita (World Bank)
+
+Optional.
+
+### Import the data using your own API wrapper
+
+```{r}
+
+```
+
+### Test your API
+
+```{r}
+
+```
+
+
+# Part 3: Cleaning, merging and analysing the data
+
+## R Setup
+
+```{r, eval=FALSE}
+# Import the data you saved in Part 1
+# (set eval = TRUE once your data are saved)
+df_ilo <- readRDS("data/df_ilostat_womenparticipation.RDS")
+df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
+```
+
+
+## First data exploration
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## Data cleaning
+
+### ILO data
+
+```{r}
+
+```
+
+### World Bank data
+
+```{r}
+
+```
+
+
+## Merge the data
+
+**1.**
+
+**2.**
+
+**3.**
+
+**4.**
+
+**5.**
+
+```{r}
+
+```
+
+
+## Explore and visualize the data
+
+### Trends in female labour force participation
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+### Trends in GDP per capita
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## Goldin's U-Shape theory
+
+### Theoretical considerations
+
+**1.**
+
+**2.**
+
+**3.**
+
+### Reproducing Goldin's graph
+
+**1.**
+
+**2.**
+
+**3.**
+
+```{r}
+
+```
+
+#### Change over time
+
+```{r}
+
+```
+
+#### Female labour force participation in Switzerland
+
+**1.**
+
+**2.**
+
+```{r}
+
+```
+
+
+## Wrap up
+
+### Your data story (bonus reflection, not graded)
+
+### Further steps
