@@ -82,7 +82,7 @@ library(ggplot2)
 ## Female labour force participation (ILO)
 
 **1.** 
-We selected “Labour force participation rate by sex and age” (`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage of the population in the corresponding sex and age group. We focus on women aged 45–54. Among the matching annual series in the ILOSTAT catalogue, this dataset has the earliest starting year (1946), whereas the ILO modelled series starts in 1990.
+We selected "Labour force participation rate by sex and age" (`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage of the population in the corresponding sex and age group. We focus on women aged 45–54. Among the matching annual series in the ILOSTAT catalogue, this dataset has the earliest starting year (1946), whereas the ILO modelled series (`EAP_2WAP_SEX_AGE_RT_A`) starts in 1990 and `EAP_5WAP_SEX_AGE_RT_A` only in 2014.
 
 **2.**
 ```{r}
