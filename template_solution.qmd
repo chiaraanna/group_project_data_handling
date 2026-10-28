@@ -13,6 +13,9 @@ format:
     embed-resources: true
     toc: true
 highlight-style: dracula
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, echo=FALSE, eval=TRUE}
@@ -21,13 +24,21 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = TRUE, eval = TRUE
 
 # How to use this template
 
-Write your answers below each question heading. Feel free to use standard markdown syntax for your text. For instance, *this*, or **this**, or maybe you want to write code inline with `2+2`. For bullet points and lists, use
+Write your answers below each question heading. Feel free to use
+standard markdown syntax for your text. For instance, *this*, or
+**this**, or maybe you want to write code inline with `2+2`. For bullet
+points and lists, use
 
-  - this
-  - is
-  - a bullet point (make sure you have one full empty line before the list starts)
+- this
+- is
+- a bullet point (make sure you have one full empty line before the list
+  starts)
 
-Your code should be written in **code chunks**, with clear comments explaining each step. When you run the entire document, all objects created in the chunks are saved in your R environment. If you want to run the code line by line instead, use the Run button or Ctrl + Enter (Cmd + Enter on Mac).
+Your code should be written in **code chunks**, with clear comments
+explaining each step. When you run the entire document, all objects
+created in the chunks are saved in your R environment. If you want to
+run the code line by line instead, use the Run button or Ctrl + Enter
+(Cmd + Enter on Mac).
 
 ```{r}
 # This is a vector. If I print it, it appears in the rendered document.
@@ -55,29 +66,65 @@ vec
 
 Delete this section before you submit.
 
-
 # R Setup
 
 ```{r}
 # Load necessary libraries
+library(Rilostat)
+library(WDI)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 ```
 
-
 # Part 1: Importing data with R packages
 
 ## Female labour force participation (ILO)
 
-**1.**
+**1.** 
+We selected “Labour force participation rate by sex and age” (`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage of the population in the corresponding sex and age group. We focus on women aged 45–54. Among the matching annual series in the ILOSTAT catalogue, this dataset has the earliest starting year (1946), whereas the ILO modelled series starts in 1990.
 
 **2.**
-
 ```{r}
+library(Rilostat)
 
+# Search for labour force participation datasets
+toc <- get_ilostat_toc(
+  search = "Labour force participation",
+  quiet = TRUE
+)
+
+# Compare the annual series by sex and age
+toc[
+  toc$id %in% c(
+    "EAP_DWAP_SEX_AGE_RT_A",
+    "EAP_2WAP_SEX_AGE_RT_A",
+    "EAP_5WAP_SEX_AGE_RT_A"
+  ),
+  c("id", "data.start", "data.end")
+]
 ```
 
+```{r}
+# Import data for women aged 45–54, for all countries
+df_ilo <- get_ilostat(
+  id = "EAP_DWAP_SEX_AGE_RT_A",
+  type = "code",
+  time_format = "num",
+  filters = list(
+    sex = "SEX_F",
+    classif1 = "AGE_10YRBANDS_Y45-54",
+    timefrom = 1950,
+    timeto = 2025
+  ),
+  best_source = "all",
+  quiet = TRUE
+)
+
+# Check the available years
+min(df_ilo$time)
+max(df_ilo$time)
+```
 
 ## GDP per capita (World Bank)
 
@@ -88,7 +135,6 @@ library(ggplot2)
 ```{r}
 
 ```
-
 
 ## Check and store the data
 
@@ -101,7 +147,6 @@ library(ggplot2)
 ```{r}
 
 ```
-
 
 # Part 2: Programming your own API functions
 
@@ -123,7 +168,6 @@ library(ggplot2)
 
 ```
 
-
 ## Bonus: GDP per capita (World Bank)
 
 Optional.
@@ -140,7 +184,6 @@ Optional.
 
 ```
 
-
 # Part 3: Cleaning, merging and analysing the data
 
 ## R Setup
@@ -152,7 +195,6 @@ df_ilo <- readRDS("data/df_ilostat_womenparticipation.RDS")
 df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```
 
-
 ## First data exploration
 
 **1.**
@@ -162,7 +204,6 @@ df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```{r}
 
 ```
-
 
 ## Data cleaning
 
@@ -177,7 +218,6 @@ df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```{r}
 
 ```
-
 
 ## Merge the data
 
@@ -194,7 +234,6 @@ df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```{r}
 
 ```
-
 
 ## Explore and visualize the data
 
@@ -217,7 +256,6 @@ df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```{r}
 
 ```
-
 
 ## Goldin's U-Shape theory
 
@@ -256,7 +294,6 @@ df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```{r}
 
 ```
-
 
 ## Wrap up
 
