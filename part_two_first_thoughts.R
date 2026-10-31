@@ -39,9 +39,18 @@ get_ilodata <- function(dataset_identifier, year_from, year_to, country = ""){
     )
 }
 
+# 2.1.2. Test your API ----------------------------------------------------
 
-# TESTING -----------------------------------------------------------------
+# The results are not equivalent.
+# Setting best_source to yes will remove duplicates from ilo_data_rilo_wrapper,
+# but the number of observations in both tibbles will still not match.
+# Next time I'll read the documentation of Rilostat on CRAN and GitHub to find the issue.
 
-# all_countries_data <- get_ilodata("DF_EAP_DWAP_SEX_AGE_RT", 1950, 2025)
-# switzerland_data <- get_ilodata("DF_EAP_DWAP_SEX_AGE_RT", 1950, 2025, "CHE")
-# incorrect_url <- get_ilodata("falserequest", 1950, 2025)
+all_countries_data <- get_ilodata("DF_EAP_DWAP_SEX_AGE_RT", 1950, 2025) # group 50 wrapper data
+tibble_ilo <- readRDS("Data/tibble_ilo.rds") |> # rilo wrapper data 
+  select("ref_area.label", "sex.label", "time", "obs_value") |>
+  rename(Country = ref_area.label,
+         Gender = sex.label,
+         Year = time,
+         Value = obs_value
+  )
