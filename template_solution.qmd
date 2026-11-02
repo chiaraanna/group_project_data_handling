@@ -35,7 +35,7 @@ library(ggplot2)
 
 # Part 1: Importing data with R packages
 
-## Female labour force participation (ILO)
+## 1.1 Female labour force participation (ILO)
 
 **1.** We selected "Labour force participation rate by sex and age"
 (`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage
@@ -86,7 +86,7 @@ min(df_ilo$time)
 max(df_ilo$time)
 ```
 
-## GDP per capita (World Bank)
+## 1.2 GDP per capita (World Bank)
 
 **1.** We chose the indicator `NY.GDP.PCAP.KD`, because it contains
 observations dating back to 1960, is measured in the same currency for
@@ -113,7 +113,7 @@ gdp_per_capita <- WDI(
   )
 ```
 
-## Check and store the data
+## 1.3 Check and store the data
 
 **1.**
 
