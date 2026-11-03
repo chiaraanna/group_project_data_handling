@@ -115,12 +115,28 @@ gdp_per_capita <- WDI(
 
 ## 1.3 Check and store the data
 
-**1.**
-
-**2.**
-
-**3.**
+**1.** The ILO data frame has `r nrow(df_ilo)` rows and the World Bank
+data frame has `r nrow(gdp_per_capita)` rows.
 
 ```{r}
+nrow(df_ilo)
+nrow(gdp_per_capita)
+```
 
+**2.** The first five rows of each data frame:
+
+```{r}
+# kable() prints the rows as a table with ALL columns
+# (a tibble printed normally hides the columns that don't fit)
+knitr::kable(head(df_ilo, 5))
+knitr::kable(head(gdp_per_capita, 5))
+```
+
+**3.** We store both data frames locally as RDS files, so we don't have
+to load the data from the APIs again in the next steps.
+
+```{r}
+dir.create("data", showWarnings = FALSE)
+saveRDS(df_ilo, "data/df_ilostat_womenparticipation.RDS")
+saveRDS(gdp_per_capita, "data/df_WorldBank_gdp_capita.RDS")
 ```
