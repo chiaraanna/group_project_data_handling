@@ -2,11 +2,11 @@
 title: "Data Handling: Group Project 2026"
 subtitle: "Women at work"
 author:
-  - name: Author1, Name
-  - name: Author2, Name
-  - name: Author3, Name
-  - name: Author4, Name
-  - name: Author5, Name
+  - name: Leon Kissling
+  - name: Chiara Krähemann
+  - name: Noé Morel
+  - name: Milan Pertuiset-Durand
+  - name: Leroy Zahno
 date: today
 format:
   html:
