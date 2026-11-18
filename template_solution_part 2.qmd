@@ -254,10 +254,8 @@ tryCatch(
 Without a country, our function returns data for
 `r n_distinct(ilo_all$Country_code)` countries and territories, the same number
 as in the Part 1 data (`r n_distinct(df_ilo$ref_area)`), and no country code
-appears in only one of the two (both `setdiff()` calls return nothing). An
-invalid country code does not crash the function: it returns our own error
-message (here with the ILO server's answer "HTTP 500 Internal Server
-Error").
+appears in only one of the two. An invalid country code does not crash the
+function: it returns our own error message ("`r error_ilo`").
 
 ### 2.1.2 Test your API
 
@@ -331,19 +329,16 @@ comparison_ilo
 ```
 
 Yes, the results are the same: for all three countries our function returns
-exactly the values that Rilostat returns (the largest absolute difference is
-`r max(abs(comparison_ilo$Difference))`). Rilostat also returns exactly one value per
-country and year in both settings, the default and `best_source = "all"`, so
-for these three countries in 2023 there are no competing sources and the choice
-of setting makes no difference. This test covers three countries in one year;
-for all countries we only compared which country codes are available (see
-above), not every value.
+exactly the values that Rilostat returns (largest absolute difference:
+`r max(abs(comparison_ilo$Difference))`). Rilostat has exactly one value per
+country and year in both settings (default and `best_source = "all"`), so the
+choice of setting makes no difference here.
 
 ## 2.2 Bonus: GDP per capita (World Bank)
 
 Optional.
 
-### 2.1.1 Import the data using your own API wrapper
+### 2.2.1 Import the data using your own API wrapper
 
 ```{r}
 get_wbdata <- function(indicator = "NY.GDP.PCAP.KD", country = "all",
@@ -429,13 +424,10 @@ tryCatch(
 ```
 
 Yes, the results are the same: for all three countries our function returns
-exactly the values that `WDI` returns (the largest absolute difference is
+exactly the values that `WDI` returns (largest absolute difference:
 `r max(abs(comparison_wb$Difference))`), e.g. Switzerland
-`r round(wb_own$Value[wb_own$Country_code == "CHE"])` US dollars in 2023. The last
-chunk shows that an invalid indicator gives our own error message. In this run
-the World Bank server answered with an HTTP error (502), so the message came
-from the check of the request; the second check in the function, for an answer
-with status 200 but no data, is also built in, but was not triggered here.
+`r round(wb_own$Value[wb_own$Country_code == "CHE"])` US dollars in 2023. An
+invalid indicator returns our own error message ("`r error_wb`").
 
 # Part 3: Cleaning, merging and analysing the data
 
