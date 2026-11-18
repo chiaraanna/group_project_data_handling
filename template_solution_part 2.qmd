@@ -177,16 +177,12 @@ saveRDS(gdp_per_capita, "data/df_WorldBank_gdp_capita.RDS")
 
 <!--
 PART 2 - WORKING NOTE (invisible in the rendered document; delete before submitting)
-Done by Chiara Kraehemann, 2026-11-16: revised Leroy's draft function
-(part_two_first_thoughts.R) so that it matches the assignment, and wrote the
-text, tests and the World Bank bonus around it. Changes are listed at the top of
-part_two_first_thoughts_v2.R.
+Done by Chiara Kraehemann, 2026-11-16: revised Leroy's draft function 
+so that it matches the assignment, and wrote the text, tests and the World Bank bonus around it.
 Rendered on 2026-11-18: everything ran without errors and the answers above
 are filled in from the real output (the numbers in the text are inline R, so
 they update with the data).
-Still open: Leroy should confirm that the reworked function is fine with him.
-Optional: Leroy's note says the number of observations did not match; see
-part_two_first_thoughts_v2.R for a 3-line check of rows vs. country-years.
+Still open: Leroy can you confirm that the reworked function is fine with you.
 -->
 
 # Part 2: Programming your own API functions
