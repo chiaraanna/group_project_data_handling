@@ -70,16 +70,15 @@ library(ggplot2)
 
 # Part 1: Importing data with R packages
 
-## Female labour force participation (ILO)
+## 1.1 Female labour force participation (ILO)
 
 **1.** We selected "Labour force participation rate by sex and age"
-(`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force (people who
-are employed or unemployed, i.e. working or looking for work) as a
-percentage of the population in the corresponding sex and age group.
-We focus on women aged 45–54. Among the matching annual series in the
-ILOSTAT catalogue, this dataset has the earliest starting year (1946),
-whereas the ILO modelled series (`EAP_2WAP_SEX_AGE_RT_A`) starts in 1990
-and `EAP_5WAP_SEX_AGE_RT_A` only in 2014.
+(`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage
+of the population in the corresponding sex and age group. We focus on
+women aged 45–54. Among the matching annual series in the ILOSTAT
+catalogue, this dataset has the earliest starting year (1946), whereas
+the ILO modelled series (`EAP_2WAP_SEX_AGE_RT_A`) starts in 1990 and
+`EAP_5WAP_SEX_AGE_RT_A` only in 2014.
 
 **2.**
 
@@ -122,19 +121,11 @@ min(df_ilo$time)
 max(df_ilo$time)
 ```
 
-Our data covers the years `r min(df_ilo$time)` to `r max(df_ilo$time)`.
+## 1.2 GDP per capita (World Bank)
 
-## GDP per capita (World Bank)
-
-**1.** We use the `WDI` package (another wrapper for the World Bank API
-is `wbstats`) and chose the indicator `NY.GDP.PCAP.KD`, "GDP per capita
-(constant 2015 US\$)". It is the gross domestic product divided by the
-midyear population, expressed in constant 2015 US dollars. It meets all
-three criteria: it uses the same currency for all countries, it is
-adjusted for inflation so that years can be compared, and according to
-our search below it has data from 1960, the earliest year available.
-GDP per capita in current US\$ (`NY.GDP.PCAP.CD`) also starts in 1960
-but is not adjusted for inflation.
+**1.** We chose the indicator `NY.GDP.PCAP.KD`, because it contains
+observations dating back to 1960, is measured in the same currency for
+all countries and is adjusted for inflation (2015 US\$).
 
 **2.**
 
@@ -143,41 +134,24 @@ toc_wdi <- WDIsearch('gdp.*capita.*US')
 print(toc_wdi)
 
 for (i in seq_len(nrow(toc_wdi))){
-  indicator <- toc_wdi[i, 1]
-  pointer <- WDI(indicator = indicator, end = 2025)
-  # WDI returns a row for every year, even without a value,
-  # so we only count rows where the indicator has a value
-  values_available <- !is.na(pointer[[indicator]])
-  first_year <- min(pointer$year[values_available])
-  number_of_obs <- sum(values_available)
-  ncountries <- length(unique(pointer$country[values_available]))
-  cat("Indicator", indicator, "dates back to", first_year, "and contains",
-      number_of_obs, "observations from", ncountries, "geographic areas.\n")
+  pointer <- WDI(indicator=toc_wdi[i,1], end=2025)
+  first_year <- min(pointer$year)
+  number_of_rows <- nrow(pointer)
+  ncountries <- length(unique(pointer$country))
+  cat("Indicator", toc_wdi[i,1], "dates back to", first_year, "and contains", number_of_rows, "observations from", ncountries, "georaphic areas.\n")
 }
 
 gdp_per_capita <- WDI(
   country = "all",
-  indicator = "NY.GDP.PCAP.KD",
-  end = 2025
-)
-
-# Oldest year with an actual value
-min(gdp_per_capita$year[!is.na(gdp_per_capita$NY.GDP.PCAP.KD)])
+  indicator="NY.GDP.PCAP.KD", 
+  end=2025
+  )
 ```
 
-The oldest year with GDP data is
-`r min(gdp_per_capita$year[!is.na(gdp_per_capita$NY.GDP.PCAP.KD)])`.
-
-## Check and store the data
+## 1.3 Check and store the data
 
 **1.** The ILO data frame has `r nrow(df_ilo)` rows and the World Bank
-data frame has `r nrow(gdp_per_capita)` rows. The World Bank data frame
-is larger because `WDI()` returns one row for each of the
-`r n_distinct(gdp_per_capita$country)` geographic areas (countries and
-groups of countries) in each of the `r n_distinct(gdp_per_capita$year)`
-years, even when no value exists. The ILO data only contains
-observations that exist, but can include several sources for the same
-country and year.
+data frame has `r nrow(gdp_per_capita)` rows.
 
 ```{r}
 nrow(df_ilo)
@@ -200,8 +174,6 @@ to load the data from the APIs again in the next steps.
 dir.create("data", showWarnings = FALSE)
 saveRDS(df_ilo, "data/df_ilostat_womenparticipation.RDS")
 saveRDS(gdp_per_capita, "data/df_WorldBank_gdp_capita.RDS")
-```
-
 
 <!--
 PART 2 - WORKING NOTE (invisible in the rendered document; delete before submitting)
