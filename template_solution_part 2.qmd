@@ -174,6 +174,7 @@ to load the data from the APIs again in the next steps.
 dir.create("data", showWarnings = FALSE)
 saveRDS(df_ilo, "data/df_ilostat_womenparticipation.RDS")
 saveRDS(gdp_per_capita, "data/df_WorldBank_gdp_capita.RDS")
+```
 
 <!--
 PART 2 - WORKING NOTE (invisible in the rendered document; delete before submitting)
@@ -187,9 +188,9 @@ Still open: Leroy can you confirm that the reworked function is fine with you.
 
 # Part 2: Programming your own API functions
 
-## Female labour force participation (ILO)
+## 2.1 Female labour force participation (ILO)
 
-### Retrieve data using your own API wrapper
+### 2.1.1 Retrieve data using your own API wrapper
 
 **Explanation of the URL.** Our function builds the URL from the ILO
 SDMX endpoint (`https://sdmx.ilo.org/rest/data/`), the dataflow with
@@ -295,7 +296,7 @@ invalid country code does not crash the function: it returns our own error
 message (here with the ILO server's answer "HTTP 500 Internal Server
 Error").
 
-### Test your API
+### 2.1.2 Test your API
 
 **1.** We apply our function to Switzerland, the USA and Germany for
 2023, using `lapply()` over the country codes.
@@ -375,11 +376,11 @@ of setting makes no difference. This test covers three countries in one year;
 for all countries we only compared which country codes are available (see
 above), not every value.
 
-## Bonus: GDP per capita (World Bank)
+## 2.2 Bonus: GDP per capita (World Bank)
 
 Optional.
 
-### Import the data using your own API wrapper
+### 2.1.1 Import the data using your own API wrapper
 
 ```{r}
 get_wbdata <- function(indicator = "NY.GDP.PCAP.KD", country = "all",
@@ -434,7 +435,7 @@ get_wbdata <- function(indicator = "NY.GDP.PCAP.KD", country = "all",
 }
 ```
 
-### Test your API
+### 2.2.2 Test your API
 
 ```{r}
 wb_own <- lapply(countries, function(x) {
