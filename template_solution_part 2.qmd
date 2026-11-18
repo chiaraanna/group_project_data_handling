@@ -19,43 +19,6 @@ highlight-style: dracula
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = TRUE, eval = TRUE)
 ```
 
-# How to use this template
-
-Write your answers below each question heading. Feel free to use standard markdown syntax for your text. For instance, *this*, or **this**, or maybe you want to write code inline with `2+2`. For bullet points and lists, use
-
-  - this
-  - is
-  - a bullet point (make sure you have one full empty line before the list starts)
-
-Your code should be written in **code chunks**, with clear comments explaining each step. When you run the entire document, all objects created in the chunks are saved in your R environment. If you want to run the code line by line instead, use the Run button or Ctrl + Enter (Cmd + Enter on Mac).
-
-```{r}
-# This is a vector. If I print it, it appears in the rendered document.
-vec <- c(2, 2)
-print(vec)
-```
-
-```{r, eval=FALSE}
-# eval = FALSE: code chunk is shown, but not executed (no output is printed)
-vec <- c(2, 2)
-vec
-```
-
-```{r, echo=FALSE}
-# echo = FALSE: code is executed, but the code itself is hidden (only output is printed)
-vec <- c(2, 2)
-vec
-```
-
-```{r, echo=TRUE, results='hide'}
-# results = 'hide': code is shown, executed, but output is hidden
-vec <- c(2, 2)
-vec
-```
-
-Delete this section before you submit.
-
-
 # R Setup
 
 ```{r}
