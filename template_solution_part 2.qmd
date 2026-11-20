@@ -245,10 +245,11 @@ setdiff(unique(ilo_all$Country_code), unique(df_ilo$ref_area))
 setdiff(unique(df_ilo$ref_area), unique(ilo_all$Country_code))
 
 # Invalid country code: our error message instead of a crash
-tryCatch(
+error_ilo <- tryCatch(
   get_ilodata(country = "XXX", year_from = 2023, year_to = 2023),
   error = function(e) conditionMessage(e)
 )
+error_ilo
 ```
 
 Without a country, our function returns data for
@@ -417,10 +418,11 @@ comparison_wb <- full_join(
 comparison_wb
 
 # Invalid indicator: status 200, but our function returns an error message
-tryCatch(
+error_wb <- tryCatch(
   get_wbdata(indicator = "NOT.AN.INDICATOR", country = "CHE"),
   error = function(e) conditionMessage(e)
 )
+error_wb
 ```
 
 Yes, the results are the same: for all three countries our function returns
