@@ -12,7 +12,7 @@ format:
   html:
     embed-resources: true
     toc: true
-highlight-style: dracula
+highlight-style: ally
 ---
 
 ```{r setup, echo=FALSE, eval=TRUE}
@@ -36,11 +36,11 @@ library(ggplot2)
 ## 1.1 Female labour force participation (ILO)
 
 **1.** We selected "Labour force participation rate by sex and age"
-(`EAP_DWAP_SEX_AGE_RT_A`). It measures the labour force as a percentage
+`EAP_DWAP_SEX_AGE_RT_A`. It measures the labour force as a percentage
 of the population in the corresponding sex and age group. We focus on
 women aged 45–54. Among the matching annual series in the ILOSTAT
 catalogue, this dataset has the earliest starting year (1946), whereas
-the ILO modelled series (`EAP_2WAP_SEX_AGE_RT_A`) starts in 1990 and
+the ILO modelled series `EAP_2WAP_SEX_AGE_RT_A` starts in 1990 and
 `EAP_5WAP_SEX_AGE_RT_A` only in 2014.
 
 **2.**
@@ -156,12 +156,12 @@ Still open: Leroy can you confirm that the reworked function is fine with you.
 ### 2.1.1 Retrieve data using your own API wrapper
 
 **Explanation of the URL.** Our function builds the URL from the ILO
-SDMX endpoint (`https://sdmx.ilo.org/rest/data/`), the dataflow with
-agency and version (`ILO,DF_EAP_DWAP_SEX_AGE_RT,1.0`) and the data key,
+SDMX endpoint `https://sdmx.ilo.org/rest/data/`, the dataflow with
+agency and version `ILO,DF_EAP_DWAP_SEX_AGE_RT,1.0` and the data key,
 whose dot-separated positions filter country, frequency (annual), sex
 (women) and age group (45–54), with one position left empty (no
 filter). Several countries are joined with "+", and an empty country
-position returns all countries. The period (`startPeriod`, `endPeriod`)
+position returns all countries. The period `startPeriod`, `endPeriod`
 and the CSV output format are then added as query parameters with
 `req_url_query()`.
 
@@ -244,19 +244,18 @@ c(countries_api   = n_distinct(ilo_all$Country_code),
 setdiff(unique(ilo_all$Country_code), unique(df_ilo$ref_area))
 setdiff(unique(df_ilo$ref_area), unique(ilo_all$Country_code))
 
-# Invalid country code: our error message instead of a crash
+# Invalid country code
 error_ilo <- tryCatch(
   get_ilodata(country = "XXX", year_from = 2023, year_to = 2023),
-  error = function(e) conditionMessage(e)
+   error = function(e) conditionMessage(e)
 )
-error_ilo
 ```
 
 Without a country, our function returns data for
 `r n_distinct(ilo_all$Country_code)` countries and territories, the same number
-as in the Part 1 data (`r n_distinct(df_ilo$ref_area)`), and no country code
+as in the Part 1 data `r n_distinct(df_ilo$ref_area)`, and no country code
 appears in only one of the two. An invalid country code does not crash the
-function: it returns our own error message ("`r error_ilo`").
+function: it returns our own error message "`r error_ilo`".
 
 ### 2.1.2 Test your API
 
@@ -282,7 +281,7 @@ of women aged 45–54 in 2023: Switzerland
 
 **2.** We run the same query with `Rilostat` and compare both results
 on country code and year. We try Rilostat's default setting and the
-setting from Part 1 (`best_source = "all"`), because Part 1 showed that
+setting from Part 1 `best_source = "all"`, because Part 1 showed that
 one country can have several sources for the same year.
 
 ```{r}
@@ -384,11 +383,11 @@ get_wbdata <- function(indicator = "NY.GDP.PCAP.KD", country = "all",
     Value        = as.numeric(data$value)
   )
 
-  # Check that we received all observations announced in the first element
-  if (nrow(df) != meta$total) {
-    warning("Received ", nrow(df), " of ", meta$total, " observations.",
-            call. = FALSE)
-  }
+  # Check that all expected observations were received
+if (nrow(df) != meta$total) {
+  stop("Received ", nrow(df), " of ", meta$total, " observations.",
+       call. = FALSE)
+}
 
   return(df)
 }
@@ -422,37 +421,75 @@ error_wb <- tryCatch(
   get_wbdata(indicator = "NOT.AN.INDICATOR", country = "CHE"),
   error = function(e) conditionMessage(e)
 )
-error_wb
 ```
 
 Yes, the results are the same: for all three countries our function returns
 exactly the values that `WDI` returns (largest absolute difference:
 `r max(abs(comparison_wb$Difference))`), e.g. Switzerland
-`r round(wb_own$Value[wb_own$Country_code == "CHE"])` US dollars in 2023. An
-invalid indicator returns our own error message ("`r error_wb`").
+`r format(round(wb_own$Value[wb_own$Country_code == "CHE"]), scientific = FALSE)` US dollars in 2023. An
+invalid indicator returns our own error message "`r error_wb`".
 
 # Part 3: Cleaning, merging and analysing the data
 
 ## R Setup
 
-```{r, eval=FALSE}
-# Import the data you saved in Part 1
-# (set eval = TRUE once your data are saved)
-df_ilo <- readRDS("data/df_ilostat_womenparticipation.RDS")
-df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
+```{r}
+# Load the saved datasets
+df_ilo <- readRDS("Data/df_ilostat_womenparticipation.RDS")
+df_wb <- readRDS("Data/df_WorldBank_gdp_capita.RDS")
 ```
 
-
-## First data exploration
-
-**1.**
-
-**2.**
+## 3.1 First data exploration
 
 ```{r}
-
+# Inspect the structure and variable types
+str(df_ilo)
+str(df_wb)
 ```
 
+The ILO dataset is a tibble with 4,529 rows and 12 columns in long format. Country/territory names, sources, indicator descriptions, sex, age groups and notes are character variables. The year `time`, participation rate `obs_value` and source flag `best_source` are numeric.
+
+The World Bank dataset is a tibble with 17,556 rows and 5 columns in long format, including countries and regional aggregates. Country names and codes `country`, `iso2c`, `iso3c` are character variables, `year` is an integer, and GDP per capita `NY.GDP.PCAP.KD` is numeric.
+
+## 3.2 Data cleaning
+
+```{r}
+# ILO test 1: check whether the sample contains only women aged 45–54
+df_ilo |>
+  count(sex, classif1)
+
+# ILO test 2: multiple observations for the same country and year
+df_ilo |>
+  count(ref_area, time) |>
+  filter(n > 1) |>
+  nrow()
+```
+```{r}
+# World Bank test 1: non-positive GDP per capita
+df_wb |>
+  filter(NY.GDP.PCAP.KD <= 0) |>
+  nrow()
+
+# World Bank test 2: missing GDP per capita
+df_wb |>
+  filter(is.na(NY.GDP.PCAP.KD)) |>
+  nrow()
+```
+**ILO**
+
+- **Definition:** The indicator measures the share of women aged 45–54 who are employed or unemployed, actively seeking work and available to work.
+- **Units:** Percent of the female population aged 45–54.
+- **Quality:** All 4,529 observations refer to women aged 45–54. However, 475 country-year combinations contain multiple observations, which require investigation during cleaning.
+- **Unit of observation:** A reported participation rate for a country or territory in a given year, with source information. Country-year combinations are not always unique.
+- **Time structure:** Annual panel data: countries and territories are observed repeatedly over time.
+
+**World Bank**
+
+- **Definition:** GDP per capita is gross domestic product divided by population.
+- **Units:** Constant 2015 US dollars per person.
+- **Quality:** No recorded GDP values are zero or negative, but 2,995 observations have missing GDP values.
+- **Unit of observation:** A country or aggregate in a particular year.
+- **Time structure:** Annual panel data, with repeated observations over time and missing GDP values for some country-year combinations.
 
 ## Data cleaning
 
