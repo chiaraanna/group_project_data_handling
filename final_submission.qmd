@@ -12,7 +12,7 @@ format:
   html:
     embed-resources: true
     toc: true
-highlight-style: ally
+highlight-style: dracula
 ---
 
 ```{r setup, echo=FALSE, eval=TRUE}
@@ -431,8 +431,6 @@ invalid indicator returns our own error message "`r error_wb`".
 
 # Part 3: Cleaning, merging and analysing the data
 
-## R Setup
-
 ```{r}
 # Load the saved datasets
 df_ilo <- readRDS("Data/df_ilostat_womenparticipation.RDS")
@@ -440,6 +438,7 @@ df_wb <- readRDS("Data/df_WorldBank_gdp_capita.RDS")
 ```
 
 ## 3.1 First data exploration
+### 3.1.1 Structures and types
 
 ```{r}
 # Inspect the structure and variable types
@@ -451,7 +450,7 @@ The ILO dataset is a tibble with 4,529 rows and 12 columns in long format. Count
 
 The World Bank dataset is a tibble with 17,556 rows and 5 columns in long format, including countries and regional aggregates. Country names and codes `country`, `iso2c`, `iso3c` are character variables, `year` is an integer, and GDP per capita `NY.GDP.PCAP.KD` is numeric.
 
-## 3.2 Data cleaning
+### 3.2.2 Describing the datasets
 
 ```{r}
 # ILO test 1: check whether the sample contains only women aged 45–54
@@ -491,102 +490,5 @@ df_wb |>
 - **Unit of observation:** A country or aggregate in a particular year.
 - **Time structure:** Annual panel data, with repeated observations over time and missing GDP values for some country-year combinations.
 
-## Data cleaning
+## 3.2 Data Cleaning
 
-### ILO data
-
-```{r}
-
-```
-
-### World Bank data
-
-```{r}
-
-```
-
-
-## Merge the data
-
-**1.**
-
-**2.**
-
-**3.**
-
-**4.**
-
-**5.**
-
-```{r}
-
-```
-
-
-## Explore and visualize the data
-
-### Trends in female labour force participation
-
-**1.**
-
-**2.**
-
-```{r}
-
-```
-
-### Trends in GDP per capita
-
-**1.**
-
-**2.**
-
-```{r}
-
-```
-
-
-## Goldin's U-Shape theory
-
-### Theoretical considerations
-
-**1.**
-
-**2.**
-
-**3.**
-
-### Reproducing Goldin's graph
-
-**1.**
-
-**2.**
-
-**3.**
-
-```{r}
-
-```
-
-#### Change over time
-
-```{r}
-
-```
-
-#### Female labour force participation in Switzerland
-
-**1.**
-
-**2.**
-
-```{r}
-
-```
-
-
-## Wrap up
-
-### Your data story (bonus reflection, not graded)
-
-### Further steps
