@@ -437,8 +437,8 @@ invalid indicator returns our own error message ("`r error_wb`").
 library(dplyr)
 
 # Load the saved datasets
-df_ilo <- readRDS("Data/tibble_ilo.rds")
-df_wb <- readRDS("Data/tibble_gdp_per_capita.rds")
+df_ilo <- readRDS("Data/df_ilostat_womenparticipation.RDS")
+df_wb <- readRDS("Data/df_WorldBank_gdp_capita.RDS")
 ```
 
 
@@ -461,11 +461,11 @@ The World Bank dataset is a tibble with 17,556 rows and 5 columns in long format
 ```{r}
 # ILO test 1: check whether the sample contains only women aged 45–54
 df_ilo |>
-  count(sex.label, classif1.label)
+  count(sex, classif1)
 
 # ILO test 2: multiple observations for the same country and year
 df_ilo |>
-  count(ref_area.label, time) |>
+  count(ref_area, time) |>
   filter(n > 1) |>
   nrow()
 ```
