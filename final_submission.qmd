@@ -10,16 +10,19 @@ author:
 date: today
 format:
   html:
+    theme: style/hsgtheme.scss
     embed-resources: true
     toc: true
+    number-sections: true
+    number-offset: [1, 0, 0]
 highlight-style: dracula
 ---
 
 ```{r setup, echo=FALSE, eval=TRUE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = TRUE, eval = TRUE)
 ```
-
-# R Setup
+# Programming your own API functions
+## R Setup {.unnumbered}
 
 ```{r}
 # Load necessary libraries
@@ -29,131 +32,15 @@ library(WDI)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+
+# Load the saved datasets
+df_ilo <- readRDS("data/df_ilostat_womenparticipation.RDS")
+df_wb <- readRDS("data/df_WorldBank_gdp_capita.RDS")
 ```
 
-# Part 1: Importing data with R packages
+## Female labour force participation (ILO)
 
-## 1.1 Female labour force participation (ILO)
-
-**1.** We selected "Labour force participation rate by sex and age"
-`EAP_DWAP_SEX_AGE_RT_A`. It measures the labour force as a percentage
-of the population in the corresponding sex and age group. We focus on
-women aged 45–54. Among the matching annual series in the ILOSTAT
-catalogue, this dataset has the earliest starting year (1946), whereas
-the ILO modelled series `EAP_2WAP_SEX_AGE_RT_A` starts in 1990 and
-`EAP_5WAP_SEX_AGE_RT_A` only in 2014.
-
-**2.**
-
-```{r}
-# Search for labour force participation datasets
-toc <- get_ilostat_toc(
-  search = "Labour force participation",
-  quiet = TRUE
-)
-
-# Compare the annual series by sex and age
-toc[
-  toc$id %in% c(
-    "EAP_DWAP_SEX_AGE_RT_A",
-    "EAP_2WAP_SEX_AGE_RT_A",
-    "EAP_5WAP_SEX_AGE_RT_A"
-  ),
-  c("id", "data.start", "data.end")
-]
-```
-
-```{r}
-# Import data for women aged 45–54, for all countries
-df_ilo <- get_ilostat(
-  id = "EAP_DWAP_SEX_AGE_RT_A",
-  type = "code",
-  time_format = "num",
-  filters = list(
-    sex = "SEX_F",
-    classif1 = "AGE_10YRBANDS_Y45-54",
-    timefrom = 1950,
-    timeto = 2025
-  ),
-  best_source = "all",
-  quiet = TRUE
-)
-
-# Check the available years
-min(df_ilo$time)
-max(df_ilo$time)
-```
-
-## 1.2 GDP per capita (World Bank)
-
-**1.** We chose the indicator `NY.GDP.PCAP.KD`, because it contains
-observations dating back to 1960, is measured in the same currency for
-all countries and is adjusted for inflation (2015 US\$).
-
-**2.**
-
-```{r}
-toc_wdi <- WDIsearch('gdp.*capita.*US')
-print(toc_wdi)
-
-for (i in seq_len(nrow(toc_wdi))){
-  pointer <- WDI(indicator=toc_wdi[i,1], end=2025)
-  first_year <- min(pointer$year)
-  number_of_rows <- nrow(pointer)
-  ncountries <- length(unique(pointer$country))
-  cat("Indicator", toc_wdi[i,1], "dates back to", first_year, "and contains", number_of_rows, "observations from", ncountries, "georaphic areas.\n")
-}
-
-gdp_per_capita <- WDI(
-  country = "all",
-  indicator="NY.GDP.PCAP.KD", 
-  end=2025
-  )
-```
-
-## 1.3 Check and store the data
-
-**1.** The ILO data frame has `r nrow(df_ilo)` rows and the World Bank
-data frame has `r nrow(gdp_per_capita)` rows.
-
-```{r}
-nrow(df_ilo)
-nrow(gdp_per_capita)
-```
-
-**2.** The first five rows of each data frame:
-
-```{r}
-# kable() prints the rows as a table with ALL columns
-# (a tibble printed normally hides the columns that don't fit)
-knitr::kable(head(df_ilo, 5))
-knitr::kable(head(gdp_per_capita, 5))
-```
-
-**3.** We store both data frames locally as RDS files, so we don't have
-to load the data from the APIs again in the next steps.
-
-```{r}
-dir.create("data", showWarnings = FALSE)
-saveRDS(df_ilo, "data/df_ilostat_womenparticipation.RDS")
-saveRDS(gdp_per_capita, "data/df_WorldBank_gdp_capita.RDS")
-```
-
-<!--
-PART 2 - WORKING NOTE (invisible in the rendered document; delete before submitting)
-Done by Chiara Kraehemann, 2026-11-16: revised Leroy's draft function 
-so that it matches the assignment, and wrote the text, tests and the World Bank bonus around it.
-Rendered on 2026-11-18: everything ran without errors and the answers above
-are filled in from the real output (the numbers in the text are inline R, so
-they update with the data).
-Still open: Leroy can you confirm that the reworked function is fine with you.
--->
-
-# Part 2: Programming your own API functions
-
-## 2.1 Female labour force participation (ILO)
-
-### 2.1.1 Retrieve data using your own API wrapper
+### Retrieve data using your own API wrapper
 
 **Explanation of the URL.** Our function builds the URL from the ILO
 SDMX endpoint `https://sdmx.ilo.org/rest/data/`, the dataflow with
@@ -263,7 +150,7 @@ function: it returns our own error message "`r error_ilo`".
 2023, using `lapply()` over the country codes.
 
 ```{r}
-countries <- c("CHE", "USA", "DEU")
+countries <- c("CHE", "DEU")
 
 ilo_own <- lapply(countries, function(x) {
   get_ilodata(country = x, year_from = 2023, year_to = 2023)
@@ -334,11 +221,9 @@ exactly the values that Rilostat returns (largest absolute difference:
 country and year in both settings (default and `best_source = "all"`), so the
 choice of setting makes no difference here.
 
-## 2.2 Bonus: GDP per capita (World Bank)
+## Bonus: GDP per capita (World Bank)
 
-Optional.
-
-### 2.2.1 Import the data using your own API wrapper
+### Import the data using your own API wrapper
 
 ```{r}
 get_wbdata <- function(indicator = "NY.GDP.PCAP.KD", country = "all",
@@ -393,7 +278,7 @@ if (nrow(df) != meta$total) {
 }
 ```
 
-### 2.2.2 Test your API
+### Test your API
 
 ```{r}
 wb_own <- lapply(countries, function(x) {
@@ -429,16 +314,10 @@ exactly the values that `WDI` returns (largest absolute difference:
 `r format(round(wb_own$Value[wb_own$Country_code == "CHE"]), scientific = FALSE)` US dollars in 2023. An
 invalid indicator returns our own error message "`r error_wb`".
 
-# Part 3: Cleaning, merging and analysing the data
+# Cleaning, merging and analysing the data
 
-```{r}
-# Load the saved datasets
-df_ilo <- readRDS("Data/df_ilostat_womenparticipation.RDS")
-df_wb <- readRDS("Data/df_WorldBank_gdp_capita.RDS")
-```
-
-## 3.1 First data exploration
-### 3.1.1 Structures and types
+## First data exploration
+### Structures and types
 
 ```{r}
 # Inspect the structure and variable types
@@ -446,11 +325,11 @@ str(df_ilo)
 str(df_wb)
 ```
 
-The ILO dataset is a tibble with 4,529 rows and 12 columns in long format. Country/territory names, sources, indicator descriptions, sex, age groups and notes are character variables. The year `time`, participation rate `obs_value` and source flag `best_source` are numeric.
+The ILO dataset is a tibble with 4,535 rows and 12 columns in long format. Country/territory names, sources, indicator descriptions, sex, age groups and notes are character variables. The year `time`, participation rate `obs_value` and source flag `best_source` are numeric.
 
-The World Bank dataset is a tibble with 17,556 rows and 5 columns in long format, including countries and regional aggregates. Country names and codes `country`, `iso2c`, `iso3c` are character variables, `year` is an integer, and GDP per capita `NY.GDP.PCAP.KD` is numeric.
+The World Bank dataset is a data frame with 17,556 rows and 5 columns in long format, including countries and regional aggregates. Country names and codes `country`, `iso2c`, `iso3c` are character variables, `year` is an integer, and GDP per capita `NY.GDP.PCAP.KD` is numeric.
 
-### 3.2.2 Describing the datasets
+### Describing the datasets
 
 ```{r}
 # ILO test 1: check whether the sample contains only women aged 45–54
@@ -478,7 +357,7 @@ df_wb |>
 
 - **Definition:** The indicator measures the share of women aged 45–54 who are employed or unemployed, actively seeking work and available to work.
 - **Units:** Percent of the female population aged 45–54.
-- **Quality:** All 4,529 observations refer to women aged 45–54. However, 475 country-year combinations contain multiple observations, which require investigation during cleaning.
+- **Quality:** All 4,535 observations refer to women aged 45–54. However, 477 country-year combinations contain multiple observations, which require investigation during cleaning.
 - **Unit of observation:** A reported participation rate for a country or territory in a given year, with source information. Country-year combinations are not always unique.
 - **Time structure:** Annual panel data: countries and territories are observed repeatedly over time.
 
@@ -490,5 +369,64 @@ df_wb |>
 - **Unit of observation:** A country or aggregate in a particular year.
 - **Time structure:** Annual panel data, with repeated observations over time and missing GDP values for some country-year combinations.
 
-## 3.2 Data Cleaning
+## Data Cleaning
+First we will inspect the ILO data; checking variable names and making sure that all constraints are met.
+```{r}
+# Checking the names of columns
+colnames(df_ilo)
+```
 
+```{r}
+# Checking if we only have the data for women aged 45-54
+cat("Age range:", unique(df_ilo$classif1), "\n")
+# Checking if the data has values by country
+cat("Number of countries:", length(unique(df_ilo$ref_area)), "\n")
+# Checking time restriction
+cat("Date from:", min(df_ilo$time), "\n")
+cat("Date to:", max(df_ilo$time))
+```
+The age and time constraints are met, however the number of countries is too high. We can further investigate this in the subsequent steps.
+
+```{r}
+# Checking the names of columns
+colnames(df_wb)
+```
+```{r}
+# Checking if we only have the data for constant 2015 US dollars
+cat("Attribute:", attr(df_wb$NY.GDP.PCAP.KD, "label"), "\n")
+# Checking if the data has values by country
+cat("Number of countries:", length(unique(df_wb$country)), "\n")
+# Checking time restriction
+cat("Date from:", min(df_wb$year), "\n")
+cat("Date to:", max(df_wb$year))
+```
+The age and time constraints are met, however the number of countries is too high and there is no LOG variable. We can further investigate this in the subsequent steps.
+
+We will now move on to the task. Firstly, we want to learn why there are as many countries as shown above and remove any observations that do not meet our constraints.
+
+```{r}
+unique(df_ilo$ref_area)
+```
+We need to convert the country codes into the actual country names by creating a new object.
+```{r}
+# Labeling the ILO Data Frame
+df_ilo_labeled <- label_ilostat(df_ilo)
+# Checking the names of columns
+colnames(df_ilo_labeled)
+# Checking the country names
+unique(df_ilo_labeled$ref_area.label)
+```
+It appears that the data indeed contain data per country. There are some countries on the list that have been dissolved since the respective data were captured, which is why the number is higher than expected.
+
+We now want to remove any variables that are not relevant to our analysis. We will exclude `source.label`, `indicator.label`, `sex.label`, `classif1.label`, `obs_status.label`,`note_source.label`and `best_source` because they do not add any new information.
+
+```{r}
+df_ilo_labeled <- df_ilo_labeled |>
+  select(ref_area.label,
+         time,
+         obs_value,
+         note_classif.label,
+         note_indicator.label)
+glimpse(df_ilo_labeled)
+```
+All observations that are non-empty in the variable `note_classif.label` are noncompliant with our age constraint. Therefore we will exclude them from the dataset.
