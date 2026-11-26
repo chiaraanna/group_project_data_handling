@@ -144,7 +144,7 @@ as in the Part 1 data `r n_distinct(df_ilo$ref_area)`, and no country code
 appears in only one of the two. An invalid country code does not crash the
 function: it returns our own error message "`r error_ilo`".
 
-### 2.1.2 Test your API
+### Test your API
 
 **1.** We apply our function to Switzerland, the USA and Germany for
 2023, using `lapply()` over the country codes.
@@ -370,7 +370,9 @@ df_wb |>
 - **Time structure:** Annual panel data, with repeated observations over time and missing GDP values for some country-year combinations.
 
 ## Data Cleaning
+
 First we will inspect the ILO data; checking variable names and making sure that all constraints are met.
+
 ```{r}
 # Checking the names of columns
 colnames(df_ilo)
@@ -385,12 +387,14 @@ cat("Number of countries:", length(unique(df_ilo$ref_area)), "\n")
 cat("Date from:", min(df_ilo$time), "\n")
 cat("Date to:", max(df_ilo$time))
 ```
-The age and time constraints are met, however the number of countries is too high. We can further investigate this in the subsequent steps.
+
+The age and time constraints are met, however the number of countries is too high. Before adressing this issue we will take a look at the World Bank data:
 
 ```{r}
 # Checking the names of columns
 colnames(df_wb)
 ```
+
 ```{r}
 # Checking if we only have the data for constant 2015 US dollars
 cat("Attribute:", attr(df_wb$NY.GDP.PCAP.KD, "label"), "\n")
@@ -400,33 +404,282 @@ cat("Number of countries:", length(unique(df_wb$country)), "\n")
 cat("Date from:", min(df_wb$year), "\n")
 cat("Date to:", max(df_wb$year))
 ```
-The age and time constraints are met, however the number of countries is too high and there is no LOG variable. We can further investigate this in the subsequent steps.
 
-We will now move on to the task. Firstly, we want to learn why there are as many countries as shown above and remove any observations that do not meet our constraints.
+The age and time constraints are met, however the number of countries is too high and there is no LOG variable. We will adress both of these issues later.
+
+We will now move on to the task. Our goal is to create a minimal data frame or tibble with tha variables `country`, `date`, and `obs_value`.
+
+First we want to learn why there are as many countries as shown above and remove any observations that do not meet our constraints.
 
 ```{r}
-unique(df_ilo$ref_area)
+head(unique(df_ilo$ref_area),5)
 ```
+
 We need to convert the country codes into the actual country names by creating a new object.
+
 ```{r}
 # Labeling the ILO Data Frame
 df_ilo_labeled <- label_ilostat(df_ilo)
 # Checking the names of columns
 colnames(df_ilo_labeled)
 # Checking the country names
-unique(df_ilo_labeled$ref_area.label)
+head(unique(df_ilo_labeled$ref_area.label),5)
 ```
+
 It appears that the data indeed contain data per country. There are some countries on the list that have been dissolved since the respective data were captured, which is why the number is higher than expected.
 
-We now want to remove any variables that are not relevant to our analysis. We will exclude `source.label`, `indicator.label`, `sex.label`, `classif1.label`, `obs_status.label`,`note_source.label`and `best_source` because they do not add any new information.
+We now want to remove any variables that are not relevant to our analysis. We will exclude `source.label`, `indicator.label`, `sex.label`, `classif1.label`, `obs_status.label`,`note_source.label`, `note_indicator.label` and `best_source` because they do not add any new information.
 
 ```{r}
 df_ilo_labeled <- df_ilo_labeled |>
   select(ref_area.label,
          time,
          obs_value,
-         note_classif.label,
-         note_indicator.label)
+         note_classif.label)
 glimpse(df_ilo_labeled)
 ```
+
 All observations that are non-empty in the variable `note_classif.label` are noncompliant with our age constraint. Therefore we will exclude them from the dataset.
+
+```{r}
+df_ilo_labeled <- df_ilo_labeled |>
+  filter(is.na(note_classif.label)) |>
+  select(-note_classif.label)
+glimpse(df_ilo_labeled)
+```
+
+Now we check if we have multiple observations for the same country and year and if there are empty rows.
+
+```{r}
+# ILO test: multiple observations for the same country and year
+df_ilo_labeled |>
+  count(ref_area.label, time) |>
+  summarise(duplicates = sum(n - 1))
+
+df_ilo_labeled |>
+  filter(is.na(obs_value)) |>
+  nrow()
+```
+
+There are no missing values and there are 510 instances where there is more than one observation per year for a given country. We take a closer look at the respective data to find out why. To do that, we create another object with the same data as `df_ilo_labeled`, but without the filters.
+
+```{r}
+# Create a labeled full data set
+df_ilo_labeled_full <- label_ilostat(df_ilo)
+
+# Show all instances where there are multiple year-value combinations for a given country
+df_ilo_labeled_full_duplicates <- df_ilo_labeled_full |>
+  semi_join(df_ilo_labeled, by = c("ref_area.label", "time", "obs_value")) |>
+  group_by(ref_area.label, time) |>
+  filter(n() > 1) |>
+  ungroup() |>
+  print()
+```
+We can now see the problem. Our data contains observations from multiple sources. So we want to find out if we can observe a pattern or if duplicates (or triplets and more) occur randomly. For that we use regular expressions to create an object that shows us which source-combinations happen and how many times they happen. The sum may be smaller than 510, because we count the number of redundant combinations, not the number of redundancies caused by those combinations.
+
+```{r}
+df_ilo_labeled_full_duplicates |>
+  mutate(source = sub(" - .*", "", source.label)) |>
+  group_by(ref_area.label, time) |>
+  summarise(
+    sources = paste(sort(source), collapse = " + "),
+    .groups = "drop"
+  ) |>
+  count(sources, sort = TRUE)
+```
+
+There are 477 redundant source combinations. There are multiple patterns, so we need to find an abstract solution that will correct all flaws at once. We will prioritize Labour Force Survey (LFS) observations and retain only one observation per country-year combination. If no LFS observations are available, we will retain the first available observation from an alternative source.
+
+```{r}
+df_ilo_clean <- df_ilo_labeled_full |>
+  filter(is.na(note_classif.label)) |>
+  arrange(desc(startsWith(source.label, "LFS"))) |>
+  distinct(ref_area.label, time, .keep_all = TRUE)
+
+
+# Count duplicates
+df_ilo_clean |>
+  count(ref_area.label, time) |>
+  filter(n > 1) |>
+  nrow()
+```
+
+There are no more redundancies. To make sure that we didn't remove more than was needed, we take the difference of the number of rows in the old and new data frame and expect it to be 510.
+
+```{r}
+# Check if the difference between the rows in the old and cleaned data frames is 510
+nrow(df_ilo_labeled) - nrow(df_ilo_clean)
+```
+
+The difference adds up to what we wanted, so now we select only relevant columns to clean it up.
+
+```{r}
+df_ilo_clean <- df_ilo_clean |>
+  select(ref_area.label, time, obs_value)
+df_ilo_clean
+```
+
+The female labour force participation rate dataset is now ready for analysis and stored in the object `df_ilo_clean`. It contains the minimal relevant data. 
+
+Let's move on to the GDP per capita data. Our goal is to store an object that contains unique observations of the variables `country`, `year`, and `NY.GDP.PCAP.KD`.
+
+We take a glimpse into the dataset to find any obvious anomalies:
+
+```{r}
+glimpse(df_wb)
+```
+We can see that the data contain some geographic areas that are not countries. We wil filter them out by creating a variable with all [World Bank iso3c country codes](https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm) and selecting them.
+
+```{r}
+# iso3c codes
+wb_iso3c <- c(
+  "AFG", "ALB", "DZA", "ASM", "AND", "AGO", "AIA", "ATG", "ARG", "ARM",
+  "ABW", "AUS", "AUT", "AZE", "BHS", "BHR", "BGD", "BRB", "BLR", "BEL",
+  "BLX", "BLZ", "BEN", "BMU", "BTN", "BOL", "BIH", "BWA", "BAT", "BRA",
+  "IOT", "VGB", "BRN", "BGR", "BFA", "BDI", "KHM", "CMR", "CAN", "CPV",
+  "CYM", "CAF", "TCD", "CHL", "CHN", "CXR", "CCK", "COL", "COM", "ZAR",
+  "COG", "COK", "CRI", "CIV", "HRV", "CUB", "CYP", "CZE", "CSK", "DNK",
+  "DJI", "DMA", "DOM", "TMP", "ECU", "EGY", "SLV", "GNQ", "ERI", "EST",
+  "ETH", "EUN", "FRO", "FLK", "FJI", "FIN", "PCZ", "ZW1", "TAN",
+  "VDR", "SVR", "ZPM", "ATF", "FRA", "FRE", "GUF", "PYF", "GAB", "GMB",
+  "GAZ", "GEO", "DDR", "DEU", "GHA", "GIB", "GRC", "GRL", "GRD", "GLP",
+  "GUM", "GTM", "GIN", "GNB", "GUY", "HTI", "VAT", "HND", "HKG", "HUN",
+  "ISL", "IND", "IDN", "IRN", "IRQ", "IRL", "ISR", "ITA", "JAM", "JPN",
+  "JTN", "JOR", "KAZ", "KEN", "KIR", "PRK", "KOR", "KWT", "KGZ", "LAO",
+  "LVA", "LBN", "LSO", "LBR", "LBY", "LIE", "LTU", "LUX", "MAC", "MKD",
+  "MDG", "MWI", "MYS", "MDV", "MLI", "MLT", "MHL", "MTQ", "MRT", "MUS",
+  "MEX", "FSM", "MID", "MDA", "MCO", "MNG", "MSR", "MAR", "MOZ", "MMR",
+  "NAM", "NRU", "NPL", "NLD", "ANT", "NZE", "NCL", "NZL", "NIC", "NER",
+  "NGA", "NIU", "NFK", "MNP", "NOR", "OMN", "PCE", "PAK", "PLW", "PAN",
+  "PNG", "PRY", "PMY", "PER", "PHL", "PCN", "POL", "PRT", "PRI", "QAT",
+  "REU", "ROM", "RUS", "RWA", "RYU", "SBH", "SHN", "KN1", "SPM", "WSM",
+  "SMR", "STP", "SWK", "SAU", "SEN", "SYC", "SLE", "SIK", "SGP", "SVK",
+  "SVN", "SLB", "SOM", "ZAF", "SVU", "ESP", "SPE", "LKA", "KNA", "LCA",
+  "VCT", "SDN", "SUR", "SJM", "SWZ", "SWE", "CHE", "SYR", "TWN", "TJK",
+  "TZA", "THA", "TGO", "TKL", "TON", "TTO", "TUN", "TUR", "TKM", "TCA",
+  "TUV", "UGA", "UKR", "ARE", "GBR", "USA", "UNS", "URY", "USP", "UZB",
+  "VUT", "VEN", "VNM", "VIR", "WAK", "WLF", "ESH", "YDR", "YEM",
+  "SER", "YUG", "ZMB", "ZWE"
+)
+df_wb_countries <- df_wb |>
+  filter(iso3c %in% wb_iso3c)
+
+glimpse(df_wb_countries)
+```
+Now we check if there are any redundant entries.
+
+```{r}
+df_wb_countries |>
+  count(iso3c, year) |>
+  summarise(redundancies = sum(n - 1))
+```
+There are no redundancies here. Finally we will count the number of `NA` values in the GDP data, so that we can fill them up.
+
+```{r}
+# Count missing GDP values
+sum(is.na(df_wb_countries$NY.GDP.PCAP.KD))
+
+# Estimating missing values
+df_wb_clean <- df_wb_countries |>
+  arrange(iso3c, year) |>
+  group_by(iso3c) |>
+  fill(NY.GDP.PCAP.KD, .direction = "downup") |>
+  ungroup() |>
+  select(country, iso3c, year, gdp_capita = NY.GDP.PCAP.KD)
+
+# Select relevant variables
+df_wb_clean <- df_wb_countries |>
+  select(country, iso3c, year, gdp_capita = NY.GDP.PCAP.KD)
+
+# Check remaining missing values
+sum(is.na(df_wb_clean$gdp_capita))
+
+```
+
+According to findings from a quick research, this suggests that the countries with missing values have no data at all. Let's verify:
+
+```{r}
+df_wb_countries |>
+  group_by(country, iso3c) |>
+  summarise(
+    total = n(),
+    missing = sum(is.na(NY.GDP.PCAP.KD)),
+    non_missing = sum(!is.na(NY.GDP.PCAP.KD)),
+    missing_pct = round(missing / total * 100, 2),
+    .groups = "drop"
+  ) |>
+  filter(missing > 0) |>
+  arrange(desc(missing))
+```
+
+This suspicion was falsified, so we need an alternative heuristic to deal with the NAs. We will drop all countries out of the list that have more than 30% missing observations. This makes sure that we maintain data quality, without disproportionately excluding developing countries.
+
+```{r}
+threshold <- 0.30
+
+df_wb_clean <- df_wb_countries |>
+  group_by(country, iso3c) |>
+  filter(mean(is.na(NY.GDP.PCAP.KD)) <= threshold) |>
+  ungroup()
+glimpse(df_wb_clean)
+sum(is.na(df_wb_clean$NY.GDP.PCAP.KD))
+```
+
+The number of missing values has been reduced. There are several ways to fill out the missing observations.
+
+We could use Interpolation (for missing values in between existing observations), extrapolation (for missing values at the start and end of the time series), or forward/backward filling (for all, as was tried earlier) to deal with the remaining values. However extrapolation assumes constant growth trends in GDP per capita, which is hard to reconcile with macroeconomic theory (across countries). Therefore we will drop the remaining countries with missing values (NAs), since they only make up 4.42% of the dataset. We must keep this limitation in mind when making general statements in our conclusion.
+
+```{r}
+df_wb_clean <- df_wb_clean |>
+  group_by(iso3c) |>
+  filter(!any(is.na(NY.GDP.PCAP.KD))) |>
+  ungroup()
+
+sum(is.na(df_wb_clean$NY.GDP.PCAP.KD))
+
+glimpse(df_wb_clean)
+```
+
+There are no more missing values, so now we select only relevant columns to clean it up.
+
+```{r}
+df_wb_clean <- df_wb_clean |>
+  select(country, year, NY.GDP.PCAP.KD)
+df_wb_clean
+```
+
+GDP per capita in constant 2015 US dollars dataset is now ready for analysis and stored in the object df_wb_clean. It contains the minimal relevant data.
+
+As hinted in the exercise, we are later required to merge the datasets `df_ilo_clean`and `df_wb_clean` later. Therefore it may be practical to only keep countries in `df_ilo_clean` that are in the also in the World Bank dataset and also check whether the datasets contain identical countries. If not, those outliers will also be filtered out. For the same reason it may be sensible to only include observations that start in 1960 in the ILO data.
+
+First we identify countries that do not match.
+
+```{r}
+# Countries only in the ILO dataset
+head(setdiff(df_ilo_clean$ref_area.label, df_wb_clean$country),5)
+
+# Countries only in the World Bank dataset
+setdiff(df_wb_clean$country, df_ilo_clean$ref_area.label)
+```
+
+Now we retain common countries.
+
+```{r}
+df_ilo_clean <- df_ilo_clean |>
+  semi_join(df_wb_clean, by = c("ref_area.label" = "country")) |>
+  mutate(time = as.integer(time))
+
+df_wb_clean <- df_wb_clean |>
+  semi_join(df_ilo_clean, by = c("country" = "ref_area.label"))
+
+glimpse(df_ilo_clean)
+glimpse(df_wb_clean)
+```
+
+And finally we verify that the countries are identical.
+
+```{r}
+setequal(df_ilo_clean$ref_area.label, df_wb_clean$country)
+```
+
+The data are now ready for the next part and stored in the objects `df_ilo_clean` and `df_wb_clean`.
